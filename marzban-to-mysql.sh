@@ -245,7 +245,7 @@ step_backup_old_files(){
     cp -ra /opt/marzban/* ~/marzban-old-files/old-opt/
     mkdir ~/marzban-old-files/old-var
     cp -ra /var/lib/marzban/* ~/marzban-old-files/old-var/
-    zip -ra marzban-old-files.zip ~/marzban-old-files
+    zip -r marzban-old-files.zip ~/marzban-old-files
     rm -r ~/marzban-old-files
     [[ $? -ne 0 ]] && STEP_STATUS=0
 }
