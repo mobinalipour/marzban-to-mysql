@@ -1,7 +1,7 @@
 #!/bin/bash
 
 AUTHOR="[Mobin Alipour](https://github.com/mobinalipour)"
-VERSION="1.0.0"
+VERSION="1.2.0"
 
 # Data Created:
 #    2023-10-29
@@ -72,7 +72,7 @@ T[032]="Checked: marzban is installed."
 T[040]="Enter a password for your database: "
 # change to MySQL
 T[050]="We are changing the Marzban database, it might take a few minutes! ..."
-T[051]="There was an error during changing the database! \n  Please check your connection or try again later."
+T[051]="There was an error during changing the database! Dont worry we restore the backup \n  Please check your connection or try again later."
 T[052]="Great News, The Marzban database changed to MySQL successfully!            \n  Old files path: /root/marzban-old-files.zip"
 T[053]=" Now you can access to phpmyadmin on port: "
 T[054]="8010"
@@ -81,9 +81,13 @@ T[060]="Now going to backup the old files..."
 T[061]="There was an error backup the old files \n  Please check your connection or try again later."
 T[062]="The old files backup was successfull. Let's continue..."
 # Restoring old files
-T[070]="Now going to restore the old files..."
+T[070]="We going to restore the old files..."
 T[071]="There was an error restoring the old files \n  Please check your connection or try again later."
 T[072]="Good News! The restoring proccess is successfull!"
+# Check mysql for marzban
+T[080]="Checking marzban database..."
+T[081]="This script found that marzban is using MySQL. Use this script if marzban is using its default database(sqlite3) "
+T[082]="Checked: marzban is using sqlite."
 
 # FUNCTIONS #
 # we use in intro
@@ -188,6 +192,15 @@ check_marzban_installation(){
   end_spin "${green}${T[032]}${no_color}"
   else
   end_spin "${red}${T[000]} ${T[031]}${no_color}" && exit 1
+  fi
+}
+
+check_marzban_database(){
+  start_spin "${yellow}${T[080]}${no_color}"
+  if [[ -d "/var/lib/marzban/mysql" ]]; then
+  end_spin "${red}${T[000]} ${T[081]}${no_color}" && exit 1
+  else
+  end_spin "${green}${T[082]}${no_color}"
   fi
 }
 
@@ -376,7 +389,7 @@ EOF
 
   marzban restart &
   pid=$!
-  sleep 60
+  sleep 90
   kill -9 ${pid} &&
   sqlite3 /var/lib/marzban/db.sqlite3 '.dump --data-only' | sed "s/INSERT INTO \([^ ]*\)/REPLACE INTO \`\\1\`/g" > /tmp/dump.sql
   [[ $? -ne 0 ]] && STEP_STATUS=0
@@ -388,7 +401,7 @@ EOF
   rm /tmp/dump.sql
   marzban restart &
   pid=$!
-  sleep 60
+  sleep 90
   kill -9 ${pid}
   [[ $? -ne 0 ]] && STEP_STATUS=0
 }
@@ -409,6 +422,7 @@ intro
 user_info
 check_root
 check_marzban_installation
+check_marzban_database
 install_base_packages
 backup_old_files
 change_to_mysql
