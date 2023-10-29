@@ -242,9 +242,10 @@ user_info() {
 step_backup_old_files(){
     mkdir ~/marzban-old-files
     mkdir ~/marzban-old-files/old-opt
-    cp -ra /opt/marzban/* ~/marzban-old-files/old-opt/
+    cp -r /opt/marzban/* ~/marzban-old-files/old-opt/
+    cp -a /opt/marzban/.env ~/marzban-old-files/old-opt/
     mkdir ~/marzban-old-files/old-var
-    cp -ra /var/lib/marzban/* ~/marzban-old-files/old-var/
+    cp -r /var/lib/marzban/* ~/marzban-old-files/old-var/
     zip -r marzban-old-files.zip ~/marzban-old-files
     rm -r ~/marzban-old-files
     [[ $? -ne 0 ]] && STEP_STATUS=0
@@ -263,12 +264,12 @@ step_restore_old_files(){
 
   unzip marzban-old-files.zip -d /root/
   rm -r /opt/marzban/*
-  cp -ra ~/root/marzban-old-files/old-opt/* /opt/marzban/
+  cp -r ~/root/marzban-old-files/old-opt/* /opt/marzban/
   
   rm -r /var/lib/marzban/*
-  cp -ra ~/root/marzban-old-files/old-var/* /var/lib/marzban/
+  cp -r ~/root/marzban-old-files/old-var/* /var/lib/marzban/
 
-  rm -r ~/marzban-old-files
+  rm -r ~/root
 
   apt purge sqlite3 -y
   marzban restart &
