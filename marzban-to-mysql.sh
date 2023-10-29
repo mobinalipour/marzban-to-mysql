@@ -242,10 +242,10 @@ user_info() {
 step_backup_old_files(){
     mkdir ~/marzban-old-files
     mkdir ~/marzban-old-files/old-opt
-    cp /opt/marzban/* ~/marzban-old-files/old-opt/
+    cp -r /opt/marzban/* ~/marzban-old-files/old-opt/
     mkdir ~/marzban-old-files/old-var
-    cp /var/lib/marzban/* ~/marzban-old-files/old-var/
-    zip marzban-old-files.zip ~/marzban-old-files
+    cp -r /var/lib/marzban/* ~/marzban-old-files/old-var/
+    zip -r marzban-old-files.zip ~/marzban-old-files
     rm -r ~/marzban-old-files
     [[ $? -ne 0 ]] && STEP_STATUS=0
 }
@@ -261,7 +261,7 @@ backup_old_files(){
 
 step_restore_old_files(){
 
-  unzip ~/marzban-old-files.zip
+  unzip marzban-old-files.zip -d /root/
   rm -r /opt/marzban/*
   mv ~/marzban-old-files/old-opt/* /opt/marzban/
   
