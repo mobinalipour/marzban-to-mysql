@@ -1,8 +1,17 @@
 ### [توضیحات فارسی ](https://github.com/mobinalipour/marzban-to-mysql/blob/main/README-FA.md)
 # TALKA
 
-The TALKA will change your marzban database(sqlite) to MySQL
+The TALKA will change your [marzban](https://github.com/Gozargah/Marzban) database(sqlite) to MySQL
 
+
+## features
+
+- One command run
+- Great for non technical users
+- takes backup you old data
+- user friendly
+- create logs
+- and...
 
 
 ## Usage
