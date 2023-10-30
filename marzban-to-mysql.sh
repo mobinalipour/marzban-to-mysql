@@ -1,7 +1,7 @@
 #!/bin/bash
 
 AUTHOR="[Mobin Alipour](https://github.com/mobinalipour)"
-VERSION="1.2.0"
+VERSION="1.5.0"
 
 # Data Created:
 #    2023-10-29
@@ -223,13 +223,14 @@ ${no_color}"
 }
 
 step_install_pkgs() {
-  {
-    apt update && apt upgrade -y
-    apt -y --fix-broken install
+  { echo "##Command: apt update && apt upgrade -y :" >> ~/output.txt 2>&1
+    apt update && apt upgrade -y >> ~/output.txt 2>&1
+    apt -y --fix-broken install >> ~/output.txt 2>&1
 
     for PKG in "${PKGS_INSTALL[@]}"
     do
-      apt install "${PKG}" -y
+      echo "##Command: apt install ${PKG} -y :" >> ~/output.txt 2>&1
+      apt install "${PKG}" -y >> ~/output.txt 2>&1
     done
   }
 
@@ -275,30 +276,33 @@ backup_old_files(){
 
 step_restore_old_files(){
 
-  unzip marzban-old-files.zip -d /root/
-  rm -r /opt/marzban/*
-  cp -r ~/root/marzban-old-files/old-opt/* /opt/marzban/
-  
-  rm -r /var/lib/marzban/*
-  cp -r ~/root/marzban-old-files/old-var/* /var/lib/marzban/
+  read -p "$(echo -e $'  '${bYellow}The process of changing the database has failed. do you want to restore your old data? y/n : ${no_color})" response
 
-  rm -r ~/root
+  while true; do
+    if [[ "$response" == "y" || "$response" == "Y" ]]; then
+      unzip /root/marzban-old-files.zip -d /root/
+      rm -r /opt/marzban/*
+      cp -r ~/root/marzban-old-files/old-opt/* /opt/marzban/
 
-  apt purge sqlite3 -y
-  marzban restart &
-  pid=$!
-  sleep 60
-  kill -9 ${pid}
-  [[ $? -ne 0 ]] && STEP_STATUS=0
-}
+      rm -r /var/lib/marzban/*
+      cp -r ~/root/marzban-old-files/old-var/* /var/lib/marzban/
 
-restore_old_files(){
-  start_spin "${yellow}${T[070]}${no_color}"
-  run_step "step_restore_old_files"
-  if [[ "${STEP_STATUS}" -eq 0 ]]; then
-    end_spin "${red}${T[000]} ${T[071]}${no_color} \n " && exit 1
-  fi
-  end_spin "${green}${T[072]}${no_color} \n "
+      rm -r ~/root
+
+      apt purge sqlite3 -y
+      marzban restart &
+      pid=$!
+      sleep 60
+      kill -9 ${pid}
+      break
+    elif [[ "$response" == "n" || "$response" == "N" ]]; then
+      break
+    else
+      echo -e "${bYellow} please Enter y or n :"
+      read -p "$(echo -e $'  '${bYellow}The process of changing the database has failed. do you want to restore your old data? (y/n):${no_color})" response
+    fi
+  done
+
 }
 
 step_change_to_mysql() {
@@ -386,20 +390,35 @@ MYSQL_ROOT_PASSWORD = ${database_password}
 # VITE_BASE_API="https://example.com/api/"
 # JWT_ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 EOF
-
-  marzban restart &
+  echo "##Command: marzban restart :" >> ~/output.txt 2>&1
+  marzban restart >> ~/output.txt 2>&1 &
   pid=$!
   sleep 90
-  kill -9 ${pid} &&
+  kill -9 ${pid}
+  echo "##Command: sqlite3  /var/lib/marzban/db.sqlite3 '.dump --data-only' | sed "s/INSERT INTO \([^ ]*\)/REPLACE INTO \`\\1\`/g" > /tmp/dump.sql :" >> ~/output.txt 2>&1
+
   sqlite3 /var/lib/marzban/db.sqlite3 '.dump --data-only' | sed "s/INSERT INTO \([^ ]*\)/REPLACE INTO \`\\1\`/g" > /tmp/dump.sql
-  [[ $? -ne 0 ]] && STEP_STATUS=0
+  # if /tmp/dump.sql is empty(if previous command failed it would be empty ) then write the message on output.txt
+  if [ ! -s /tmp/dump.sql ]; then
+    echo "Command 'sqlite3' not found, but can be installed with: apt install sqlite3" >> ~/output.txt
+    STEP_STATUS=0
+  elif [ -e /tmp/dump.sql ]; then
+    echo "There is no file named to dump.sql in /tmp it might be cause of 'sqlite3' not found, but can be installed with: apt install sqlite3" >> ~/output.txt
+    STEP_STATUS=0
+  else
+    echo "This command was successfull! \n This message will be printed on output file if the command execute successfully " >> ~/output.txt
+  fi
+
   cd /opt/marzban
-  docker compose cp /tmp/dump.sql mysql:/dump.sql
+  echo "##Command: docker compose cp /tmp/dump.sql mysql:/dump.sql :" >> ~/output.txt 2>&1
+  docker compose cp /tmp/dump.sql mysql:/dump.sql >> ~/output.txt 2>&1
   [[ $? -ne 0 ]] && STEP_STATUS=0
-  docker compose exec mysql mysql -u root -p${database_password} -h 127.0.0.1 marzban -e "SET FOREIGN_KEY_CHECKS = 0; SET NAMES utf8mb4; SOURCE dump.sql;"
+  echo '##Command: docker compose exec mysql mysql -u root -p${database_password} -h 127.0.0.1 marzban -e "SET FOREIGN_KEY_CHECKS = 0; SET NAMES utf8mb4; SOURCE dump.sql;" :' >> ~/output.txt 2>&1
+  docker compose exec mysql mysql -u root -p${database_password} -h 127.0.0.1 marzban -e "SET FOREIGN_KEY_CHECKS = 0; SET NAMES utf8mb4; SOURCE dump.sql;" >> ~/output.txt 2>&1
   [[ $? -ne 0 ]] && STEP_STATUS=0
   rm /tmp/dump.sql
-  marzban restart &
+  echo "##Command: marzban restart :" >> ~/output.txt 2>&1
+  marzban restart >> ~/output.txt 2>&1 &
   pid=$!
   sleep 90
   kill -9 ${pid}
@@ -410,7 +429,7 @@ change_to_mysql(){
   start_spin "${yellow}${T[050]}${no_color}"
   run_step "step_change_to_mysql"
   if [[ "${STEP_STATUS}" -eq 0 ]]; then
-    end_spin "${red}${T[000]} ${T[051]}${no_color} \n " && restore_old_files && exit 1
+    end_spin "${red}${T[000]} ${T[051]}${no_color} \n " && step_restore_old_files && exit 1
   fi
   end_spin "${green}${T[052]}${no_color} \n ${green}${T[053]}${no_color}${bYellow}${T[054]}${no_color} \n "
 }
