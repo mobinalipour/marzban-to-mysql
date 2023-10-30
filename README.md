@@ -26,7 +26,7 @@ bash <(curl -s https://raw.githubusercontent.com/mobinalipour/marzban-to-mysql/m
     
 ## Notes
 
-The use of this script is completely safe because before doing anything, it takes a backup of `/opt/marzban` and `/var/marzban`paths and saves it in the `/root/marzban-old-files.zip` and if something goes wrong it will restore your old data.
+The use of this script is completely safe because before doing anything, it takes a backup of `/opt/marzban` and `/var/marzban`paths and saves it in the `/root/marzban-old-files.zip` and if something goes wrong you can restore your old data.
 
 After changing the database and seeing the success message you can access the `phpmyadmin` on port `8010` 
 ## Support
