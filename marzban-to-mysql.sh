@@ -64,7 +64,7 @@ T[001]="Thanks for using this script \n  If you found this script useful: \n  Pl
 T[002]="Version:"
 T[003]="Author:"
 T[004]="Notes:"
-T[005]="The TALKA will backup your old files on /root before change database \n    and if something goes wrong this script can restore your old data! "
+T[005]="The TALKA will backup your old files on /root before change database \n    and if something goes wrong you can restore your old data! "
 T[006]="This script change marzban database(sqlite3) to MySQL"
 T[007]="Description:"
 # check_root
