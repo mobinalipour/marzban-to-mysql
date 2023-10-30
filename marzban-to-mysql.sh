@@ -1,7 +1,7 @@
 #!/bin/bash
 
 AUTHOR="[Mobin Alipour](https://github.com/mobinalipour)"
-VERSION="1.5.0"
+VERSION="2.0.0"
 
 # Data Created:
 #    2023-10-29
@@ -29,6 +29,17 @@ ascii_art() {
   +----------------------------------------+
   "
 }
+ascii_art2() {
+  echo -e "
+  ██████╗ ███████╗ █████╗ ██████╗     ██╗  ██╗███████╗██████╗ ███████╗
+  ██╔══██╗██╔════╝██╔══██╗██╔══██╗    ██║  ██║██╔════╝██╔══██╗██╔════╝
+  ██████╔╝█████╗  ███████║██║  ██║    ███████║█████╗  ██████╔╝█████╗  
+  ██╔══██╗██╔══╝  ██╔══██║██║  ██║    ██╔══██║██╔══╝  ██╔══██╗██╔══╝  
+  ██║  ██║███████╗██║  ██║██████╔╝    ██║  ██║███████╗██║  ██║███████╗
+  ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝     ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚══════╝
+  +-------------------------------------------------------------------+
+  "
+}
 
 # General Variables
 CAN_USE_TPUT=$(command -v tput >/dev/null 2>&1 && echo "true" || echo "false")
@@ -53,41 +64,37 @@ T[001]="Thanks for using this script \n  If you found this script useful: \n  Pl
 T[002]="Version:"
 T[003]="Author:"
 T[004]="Notes:"
-T[005]="The TALKA will backup your old files on /root before change database \n    and if something goes wrong this script will restore your old data! "
+T[005]="The TALKA will backup your old files on /root before change database \n    and if something goes wrong this script can restore your old data! "
 T[006]="This script change marzban database(sqlite3) to MySQL"
 T[007]="Description:"
 # check_root
-T[010]="Verifying root access..."
 T[011]="Please run this script as root!"
 T[012]="Checked: You have Superuser privileges."
 # install_base_packages
-T[020]="Installing essential packages for your OS..."
 T[021]="There was an error during the installation of essential packages! \n  Please check your connection or try again later."
 T[022]="All required packages have been successfully installed."
 # check marzban installation
-T[030]="Verifying marzban installation..."
 T[031]="Please install marzban first! this script could not found marzban "
 T[032]="Checked: marzban is installed."
 # user info
 T[040]="Enter a password for your database: "
-# change to MySQL
-T[050]="We are changing the Marzban database, it might take a few minutes! ..."
-T[051]="There was an error during changing the database! Dont worry we restore the backup \n  Please check your connection or try again later."
-T[052]="Great News, The Marzban database changed to MySQL successfully!            \n  Old files path: /root/marzban-old-files.zip"
-T[053]=" Now you can access to phpmyadmin on port: "
-T[054]="8010"
 # back up old files
 T[060]="Now going to backup the old files..."
 T[061]="There was an error backup the old files \n  Please check your connection or try again later."
 T[062]="The old files backup was successfull. Let's continue..."
 # Restoring old files
-T[070]="We going to restore the old files..."
 T[071]="There was an error restoring the old files \n  Please check your connection or try again later."
 T[072]="Good News! The restoring proccess is successfull!"
 # Check mysql for marzban
-T[080]="Checking marzban database..."
 T[081]="This script found that marzban is using MySQL. Use this script if marzban is using its default database(sqlite3) "
 T[082]="Checked: marzban is using sqlite."
+# outro
+T[090]="if you can see this message it means the script is done! \n  If you found this script useful: \n  Please support me by a star on my Github!"
+T[091]="Important:"
+T[092]="Talka took a backup of your old data on :"
+T[093]="/root/marzban-old-data.zip"
+T[094]="Please check the database changes and if there is a problem you can use the backup files."
+T[095]="You can control your database in phpmyadmin by root user on port:"
 
 # FUNCTIONS #
 # we use in intro
@@ -115,92 +122,28 @@ escaped_length() {
   echo "${stripped_len}"
 }
 
-run_step() {
-  {
-    "$@"
-  } &> /dev/null
-}
-
-# Spinner Function
-start_spin() {
-  local spin_chars
-  spin_chars='/-\|'
-
-  local sc
-  sc=0
-
-  local delay
-  delay=0.1
-
-  local text
-  text="${1}"
-
-  SPIN_TEXT_LEN=$(escaped_length "${text}")
-  # Hide cursor
-  [[ "${CAN_USE_TPUT}" == "true" ]] && tput civis
-
-  while true; do
-    printf "\r  [%s] ${text}"  "${spin_chars:sc++:1}"
-    sleep ${delay}
-    ((sc==${#spin_chars})) && sc=0
-  done &
-  SPIN_PID=$!
-  # Show cursor
-  [[ "${CAN_USE_TPUT}" == "true" ]] && tput cnorm
-}
-
-kill_spin() {
-  kill "${SPIN_PID}"
-  wait "${SPIN_PID}" 2>/dev/null
-}
-
-end_spin() {
-  local text
-  text="${1}"
-
-  local text_len
-  text_len=$(escaped_length "${text}")
-  
-  run_step "kill_spin"
-
-  if [[ -n "${text}" ]]; then
-    printf "\r  ${text}"
-    # Due to the preceding space in the text, we append '6' to the total length.
-    printf "%*s\n" $((${SPIN_TEXT_LEN} - ${text_len} + 6)) ""
-  fi
-  # Reset Status
-  STEP_STATUS=1
-}
-
-# Clean up if script terminated.
-clean_up() {
-  # Show cursor && Kill spinner
-  [[ "${CAN_USE_TPUT}" == "true" ]] && tput cnorm
-  end_spin ""
-}
-trap clean_up EXIT TERM SIGHUP SIGTERM
 
 check_root() {
-  start_spin "${yellow}${T[010]}${no_color}"
-  [[ $EUID -ne 0 ]] && end_spin "${red}${T[000]} ${T[011]}${no_color}" && exit 1
-  end_spin "${green}${T[012]}${no_color}"
+  if [[ $EUID -ne 0 ]]; then
+  echo -e "${green}${T[011]}${no_color}"
+  else
+  echo -e "${green}${T[012]}${no_color}"
+  fi
 }
 
 check_marzban_installation(){
-  start_spin "${yellow}${T[030]}${no_color}"
   if [[ -f "/opt/marzban/docker-compose.yml" ]]; then
-  end_spin "${green}${T[032]}${no_color}"
+  echo -e "${green}${T[032]}${no_color}"
   else
-  end_spin "${red}${T[000]} ${T[031]}${no_color}" && exit 1
+  echo -e "${red}${T[000]} ${T[031]}${no_color}" && exit 1
   fi
 }
 
 check_marzban_database(){
-  start_spin "${yellow}${T[080]}${no_color}"
   if [[ -d "/var/lib/marzban/mysql" ]]; then
-  end_spin "${red}${T[000]} ${T[081]}${no_color}" && exit 1
+  echo -e "${red}${T[000]} ${T[081]}${no_color}" && exit 1
   else
-  end_spin "${green}${T[082]}${no_color}"
+  echo -e "${green}${T[082]}${no_color}"
   fi
 }
 
@@ -222,29 +165,17 @@ $(draw_line)
 ${no_color}"
 }
 
-step_install_pkgs() {
-  { echo "##Command: apt update && apt upgrade -y :" >> ~/output.txt 2>&1
-    apt update && apt upgrade -y >> ~/output.txt 2>&1
-    apt -y --fix-broken install >> ~/output.txt 2>&1
+install_pkgs() {
+    apt update && apt upgrade -y
+    apt -y --fix-broken install
 
     for PKG in "${PKGS_INSTALL[@]}"
     do
-      echo "##Command: apt install ${PKG} -y :" >> ~/output.txt 2>&1
-      apt install "${PKG}" -y >> ~/output.txt 2>&1
+      apt install "${PKG}" -y 
     done
-  }
 
-  [[ $? -ne 0 ]] && STEP_STATUS=0
 }
 
-install_base_packages() {
-  start_spin "${yellow}${T[020]}${no_color}"
-  run_step "step_install_pkgs"
-  if [[ "${STEP_STATUS}" -eq 0 ]]; then
-    end_spin "${red}${T[000]} ${T[021]}${no_color} \n " && exit 1
-  fi
-  end_spin "${green}${T[022]}${no_color}"
-}
 
 user_info() {
   read -p "$(echo -e $'  '${bYellow}${T[040]}${no_color})" database_password
@@ -253,7 +184,7 @@ user_info() {
   intro
 }
 
-step_backup_old_files(){
+backup_old_files(){
     mkdir ~/marzban-old-files
     mkdir ~/marzban-old-files/old-opt
     cp -r /opt/marzban/* ~/marzban-old-files/old-opt/
@@ -262,52 +193,10 @@ step_backup_old_files(){
     cp -r /var/lib/marzban/* ~/marzban-old-files/old-var/
     zip -r marzban-old-files.zip ~/marzban-old-files
     rm -r ~/marzban-old-files
-    [[ $? -ne 0 ]] && STEP_STATUS=0
 }
 
-backup_old_files(){
-  start_spin "${yellow}${T[060]}${no_color}"
-  run_step "step_backup_old_files"
-  if [[ "${STEP_STATUS}" -eq 0 ]]; then
-    end_spin "${red}${T[000]} ${T[061]}${no_color} \n " && exit 1
-  fi
-  end_spin "${green}${T[062]}${no_color} \n "
-}
 
-step_restore_old_files(){
-
-  read -p "$(echo -e $'  '${bYellow}The process of changing the database has failed. do you want to restore your old data? y/n : ${no_color})" response
-
-  while true; do
-    if [[ "$response" == "y" || "$response" == "Y" ]]; then
-      unzip /root/marzban-old-files.zip -d /root/
-      rm -r /opt/marzban/*
-      cp -r ~/root/marzban-old-files/old-opt/* /opt/marzban/
-      cp -r ~/root/marzban-old-files/old-opt/.env /opt/marzban/
-
-      rm -r /var/lib/marzban/*
-      cp -r ~/root/marzban-old-files/old-var/* /var/lib/marzban/
-
-      rm -r ~/root
-
-      apt purge sqlite3 -y
-      marzban restart &
-      pid=$!
-      sleep 60
-      kill -9 ${pid}
-      break
-    elif [[ "$response" == "n" || "$response" == "N" ]]; then
-      break
-    else
-      echo -e "${bYellow} please Enter y or n :"
-      read -p "$(echo -e $'  '${bYellow}The process of changing the database has failed. do you want to restore your old data? (y/n):${no_color})" response
-    fi
-  done
-
-}
-
-step_change_to_mysql() {
-  echo -n "" > /opt/marzban/docker-compose.yml
+change_to_mysql() {
   sudo cat << EOF | sudo tee /opt/marzban/docker-compose.yml
 services:
   marzban:
@@ -391,60 +280,61 @@ MYSQL_ROOT_PASSWORD = ${database_password}
 # VITE_BASE_API="https://example.com/api/"
 # JWT_ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 EOF
-  echo "##Command: marzban restart :" >> ~/output.txt 2>&1
-  marzban restart >> ~/output.txt 2>&1 &
-  pid=$!
-  sleep 90
-  kill -9 ${pid}
-  echo "##Command: sqlite3  /var/lib/marzban/db.sqlite3 '.dump --data-only' | sed "s/INSERT INTO \([^ ]*\)/REPLACE INTO \`\\1\`/g" > /tmp/dump.sql :" >> ~/output.txt 2>&1
+
+
+  marzban restart | tee output.txt &
+  while true; do
+    if [ $(grep "(Press CTRL+C to quit)" output.txt | wc -l) -gt 0 ]; then
+      #kill -9 $(pgrep -f 'marzban.*restart')
+      sleep 1
+      rm -r /root/output.txt
+      break
+    fi
+  done
 
   sqlite3 /var/lib/marzban/db.sqlite3 '.dump --data-only' | sed "s/INSERT INTO \([^ ]*\)/REPLACE INTO \`\\1\`/g" > /tmp/dump.sql
-  # if /tmp/dump.sql is empty(if previous command failed it would be empty ) then write the message on output.txt
-  if [ ! -s /tmp/dump.sql ]; then
-    echo "Command 'sqlite3' not found, but can be installed with: apt install sqlite3" >> ~/output.txt
-    STEP_STATUS=0
-  elif [ -e /tmp/dump.sql ]; then
-    echo "There is no file named to dump.sql in /tmp it might be cause of 'sqlite3' not found, but can be installed with: apt install sqlite3" >> ~/output.txt
-    STEP_STATUS=0
-  else
-    echo "This command was successfull! \n This message will be printed on output file if the command execute successfully " >> ~/output.txt
-  fi
-
-  cd /opt/marzban
-  echo "##Command: docker compose cp /tmp/dump.sql mysql:/dump.sql :" >> ~/output.txt 2>&1
-  docker compose cp /tmp/dump.sql mysql:/dump.sql >> ~/output.txt 2>&1
-  [[ $? -ne 0 ]] && STEP_STATUS=0
-  echo '##Command: docker compose exec mysql mysql -u root -p${database_password} -h 127.0.0.1 marzban -e "SET FOREIGN_KEY_CHECKS = 0; SET NAMES utf8mb4; SOURCE dump.sql;" :' >> ~/output.txt 2>&1
-  docker compose exec mysql mysql -u root -p${database_password} -h 127.0.0.1 marzban -e "SET FOREIGN_KEY_CHECKS = 0; SET NAMES utf8mb4; SOURCE dump.sql;" >> ~/output.txt 2>&1
-  [[ $? -ne 0 ]] && STEP_STATUS=0
+  cd /opt/marzban || exit 
+  docker compose cp /tmp/dump.sql mysql:/dump.sql
+  docker compose exec mysql mysql -u root -p${database_password} -h 127.0.0.1 marzban -e 'SET FOREIGN_KEY_CHECKS = 0; SET NAMES utf8mb4; SOURCE dump.sql;'
   rm /tmp/dump.sql
-  echo "##Command: marzban restart :" >> ~/output.txt 2>&1
-  marzban restart >> ~/output.txt 2>&1 &
-  pid=$!
-  sleep 90
-  kill -9 ${pid}
-  [[ $? -ne 0 ]] && STEP_STATUS=0
+
+  marzban restart | tee output.txt &
+  while true; do
+    if [ $(grep "(Press CTRL+C to quit)" output.txt | wc -l) -gt 0 ]; then
+      #kill -9 $(pgrep -f 'marzban.*restart')
+      sleep 1
+      rm -r /root/output.txt
+      break
+    fi
+  done
 }
 
-change_to_mysql(){
-  start_spin "${yellow}${T[050]}${no_color}"
-  run_step "step_change_to_mysql"
-  if [[ "${STEP_STATUS}" -eq 0 ]]; then
-    end_spin "${red}${T[000]} ${T[051]}${no_color} \n " && step_restore_old_files && exit 1
-  fi
-  end_spin "${green}${T[052]}${no_color} \n ${green}${T[053]}${no_color}${bYellow}${T[054]}${no_color} \n "
-}
+outro(){
+  echo -e "${blue}
+$(ascii_art2)${no_color}
+  ${green}${T[002]}${no_color} ${bYellow}${VERSION}${no_color}
+  ${green}${T[003]}${no_color} ${bYellow}${AUTHOR}${no_color}
+  
+  ${blue}${T[090]}${no_color}
 
+  ${red}${T[091]}${no_color}
+    ${green}${T[092]}${no_color}
+    ${bYellow}${T[093]}${no_color}
+
+    ${green}${T[094]}${no_color}
+    ${green}${T[095]}${no_color}${bYellow}${T[054]}${no_color}
+
+"
+}
 
 # RUN #
 clear
 intro
-user_info
+user_info 
 check_root
 check_marzban_installation
 check_marzban_database
-install_base_packages
-backup_old_files
+install_pkgs
+backup_old_files 
 change_to_mysql
-# if script terminated:
-clean_up
+outro
