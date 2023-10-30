@@ -283,6 +283,7 @@ step_restore_old_files(){
       unzip /root/marzban-old-files.zip -d /root/
       rm -r /opt/marzban/*
       cp -r ~/root/marzban-old-files/old-opt/* /opt/marzban/
+      cp -r ~/root/marzban-old-files/old-opt/.env /opt/marzban/
 
       rm -r /var/lib/marzban/*
       cp -r ~/root/marzban-old-files/old-var/* /var/lib/marzban/
