@@ -79,7 +79,6 @@ T[032]="Checked: marzban is installed."
 # user info
 T[040]="Enter a password for your database: "
 # back up old files
-T[060]="Now going to backup the old files..."
 T[061]="There was an error backup the old files \n  Please check your connection or try again later."
 T[062]="The old files backup was successfull. Let's continue..."
 # Restoring old files
@@ -95,6 +94,7 @@ T[092]="Talka took a backup of your old data on :"
 T[093]="/root/marzban-old-data.zip"
 T[094]="Please check the database changes and if there is a problem you can use the backup files."
 T[095]="You can control your database in phpmyadmin by root user on port:"
+T[096]="8010"
 
 # FUNCTIONS #
 # we use in intro
@@ -322,7 +322,7 @@ $(ascii_art2)${no_color}
     ${bYellow}${T[093]}${no_color}
 
     ${green}${T[094]}${no_color}
-    ${green}${T[095]}${no_color}${bYellow}${T[054]}${no_color}
+    ${green}${T[095]}${no_color}${bYellow}${T[096]}${no_color}
 
 "
 }
