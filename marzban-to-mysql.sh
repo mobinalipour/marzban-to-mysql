@@ -1,7 +1,7 @@
 #!/bin/bash
 
 AUTHOR="[Mobin Alipour](https://github.com/mobinalipour)"
-VERSION="2.0.0"
+VERSION="2.1.0"
 
 # Data Created:
 #    2023-10-29
@@ -16,6 +16,9 @@ green="\e[32m\e[01m"
 yellow="\e[33m\e[01m"
 bYellow="\e[1;33m"
 no_color="\e[0m"
+
+set -e
+trap 'error_code=$?; if [ $error_code -ne 0 ]; then echo -e "${red}Error: An error occurred with exit code $error_code. Exiting.${no_color}"; exit $error_code; fi' ERR
 
 # Ascii art
 ascii_art() {
