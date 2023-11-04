@@ -1,7 +1,7 @@
 #!/bin/bash
 
 AUTHOR="[Mobin Alipour](https://github.com/mobinalipour)"
-VERSION="2.1.0"
+VERSION="2.1.1"
 
 # Data Created:
 #    2023-10-29
@@ -236,55 +236,15 @@ services:
       - mysql
 EOF
 
-  sudo cat << EOF | sudo tee /opt/marzban/.env
-
-UVICORN_HOST = "0.0.0.0"
-UVICORN_PORT = 8000
-
-
-## We highly recommend add admin using marzban cli tool and do not use
-## the following variables which is somehow hard codded infrmation.
-# SUDO_USERNAME = "admin"
-# SUDO_PASSWORD = "admin"
-
-# UVICORN_UDS: "/run/marzban.socket"
-# UVICORN_SSL_CERTFILE = "/var/lib/marzban/certs/example.com/fullchain.pem"
-# UVICORN_SSL_KEYFILE = "/var/lib/marzban/certs/example.com/key.pem"
-
-
-XRAY_JSON = "/var/lib/marzban/xray_config.json"
-# XRAY_SUBSCRIPTION_URL_PREFIX = "https://example.com"
-# XRAY_EXECUTABLE_PATH = "/usr/local/bin/xray"
-# XRAY_ASSETS_PATH = "/usr/local/share/xray"
-# XRAY_EXCLUDE_INBOUND_TAGS = "INBOUND_X INBOUND_Y"
-# XRAY_FALLBACKS_INBOUND_TAG = "INBOUND_X"
-
-
-# TELEGRAM_API_TOKEN = 123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-# TELEGRAM_ADMIN_ID = 987654321
-# TELEGRAM_PROXY_URL = "http://localhost:8080"
-
-
-# CUSTOM_TEMPLATES_DIRECTORY="/var/lib/marzban/templates/"
-# CLASH_SUBSCRIPTION_TEMPLATE="clash/my-custom-template.yml"
-# SUBSCRIPTION_PAGE_TEMPLATE="subscription/index.html"
-# HOME_PAGE_TEMPLATE="home/index.html"
-
-
-#SQLALCHEMY_DATABASE_URL = "sqlite:////var/lib/marzban/db.sqlite3"
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:${database_password}@127.0.0.1/marzban"
-MYSQL_ROOT_PASSWORD = ${database_password}
-
-
-### for developers
-# DOCS=true
-# DEBUG=true
-# WEBHOOK_ADDRESS = "http://127.0.0.1:9000/"
-# WEBHOOK_SECRET = "something-very-very-secret"
-# VITE_BASE_API="https://example.com/api/"
-# JWT_ACCESS_TOKEN_EXPIRE_MINUTES = 1440
-EOF
-
+  file=/opt/marzban/.env
+  if grep -q "^SQLALCHEMY_DATABASE_URL" "$file"; then
+    sed -i 's/^SQLALCHEMY_DATABASE_URL/#&/' "$file"
+    echo "SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:${database_password}@127.0.0.1/marzban"" >> "$file"
+    echo "MYSQL_ROOT_PASSWORD = ${database_password}" >> "$file"
+  else
+    echo "SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:${database_password}@127.0.0.1/marzban"" >> "$file"
+    echo "MYSQL_ROOT_PASSWORD = ${database_password}" >> "$file"
+  fi
 
   marzban restart | tee output.txt &
   while true; do
