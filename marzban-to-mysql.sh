@@ -1,7 +1,7 @@
 #!/bin/bash
 
 AUTHOR="[Mobin Alipour](https://github.com/mobinalipour)"
-VERSION="2.1.1"
+VERSION="2.4.1"
 
 # Data Created:
 #    2023-10-29
@@ -55,7 +55,6 @@ STEP_STATUS=1
 # OS Variables
 PKGS_INSTALL=(
   sqlite3
-  zip
 )
 
 # TEXT MESSAGES #
@@ -94,7 +93,7 @@ T[082]="Checked: marzban is using sqlite."
 T[090]="if you can see this message it means the script is done! \n  If you found this script useful: \n  Please support me by a star on my Github!"
 T[091]="Important:"
 T[092]="Talka took a backup of your old data on :"
-T[093]="/root/marzban-old-data.zip"
+T[093]="/root/marzban-old-data"
 T[094]="Please check the database changes and if there is a problem you can use the backup files."
 T[095]="You can control your database in phpmyadmin by root user on port:"
 T[096]="8010"
@@ -169,6 +168,10 @@ ${no_color}"
 }
 
 install_pkgs() {
+
+  if [[ $(lsb_release -rs) == "20.04" ]]; then
+
+    sudo add-apt-repository -y ppa:linuxgndu/sqlitebrowser
     apt update && apt upgrade -y
     apt -y --fix-broken install
 
@@ -177,6 +180,16 @@ install_pkgs() {
       apt install "${PKG}" -y 
     done
 
+  else
+    apt update && apt upgrade -y
+    apt -y --fix-broken install
+
+    for PKG in "${PKGS_INSTALL[@]}"
+    do
+      apt install "${PKG}" -y 
+    done
+
+  fi
 }
 
 
@@ -188,53 +201,49 @@ user_info() {
 }
 
 backup_old_files(){
-    mkdir ~/marzban-old-files
-    mkdir ~/marzban-old-files/old-opt
-    cp -r /opt/marzban/* ~/marzban-old-files/old-opt/
-    cp -a /opt/marzban/.env ~/marzban-old-files/old-opt/
-    mkdir ~/marzban-old-files/old-var
-    cp -r /var/lib/marzban/* ~/marzban-old-files/old-var/
-    zip -r marzban-old-files.zip ~/marzban-old-files
-    rm -r ~/marzban-old-files
+    mkdir /root/marzban-old-files
+    mkdir /root/marzban-old-files/old-opt
+    cp -r /opt/marzban/* /root/marzban-old-files/old-opt/
+    cp -a /opt/marzban/.env /root/marzban-old-files/old-opt/
+    mkdir /root/marzban-old-files/old-var
+    cp -r /var/lib/marzban/* /root/marzban-old-files/old-var/
 }
 
 
 change_to_mysql() {
-  sudo cat << EOF | sudo tee /opt/marzban/docker-compose.yml
-services:
-  marzban:
-    image: gozargah/marzban:latest
-    restart: always
-    env_file: .env
-    network_mode: host
-    volumes:
-      - /var/lib/marzban:/var/lib/marzban
-    depends_on:
-      - mysql
+file_path="/opt/marzban/docker-compose.yml"
 
-  mysql:
-    image: mysql:latest
-    restart: always
-    env_file: .env
-    network_mode: host
-    command: --bind-address=127.0.0.1 --mysqlx-bind-address=127.0.0.1 --disable-log-bin
-    environment:
-      MYSQL_DATABASE: marzban
-    volumes:
-      - /var/lib/marzban/mysql:/var/lib/mysql
+services_line=$(grep -n "services:" "$file_path" | head -n 1 | cut -d: -f1)
+volumes_line=$(grep -n "volumes:" "$file_path" | head -n 1 | cut -d: -f1)
+depends_on_line=$(grep -n "depends_on:" "$file_path" | head -n 1 | cut -d: -f1)
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    restart: always
-    env_file: .env
-    network_mode: host
-    environment:
-      PMA_HOST: 127.0.0.1
-      APACHE_PORT: 8010
-      UPLOAD_LIMIT: 1024M
-    depends_on:
-      - mysql
-EOF
+if [ -n "$depends_on_line" ]; then
+  insert_line=$((depends_on_line + 1))
+  while true; do
+    line_content=$(sed -n "${insert_line}p" "$file_path")
+    if [ -z "$line_content" ]; then
+      sed -i "${insert_line}i \ \ \ \ \ \ \- mysql \n" "$file_path"
+      insert_line=$((insert_line + 2))
+      sed -i "${insert_line}i \ \ mysql:\n    image: mysql:latest\n    restart: always\n    env_file: .env\n    network_mode: host\n    command: --bind-address=127.0.0.1 --mysqlx-bind-address=127.0.0.1 --disable-log-bin\n    environment:\n      MYSQL_DATABASE: marzban\n    volumes:\n      - \/var\/lib\/marzban\/mysql:\/var\/lib\/mysql\n\n  phpmyadmin:\n    image: phpmyadmin\/phpmyadmin:latest\n    restart: always\n    env_file: .env\n    network_mode: host\n    environment:\n      PMA_HOST: 127.0.0.1\n      APACHE_PORT: 8010\n      UPLOAD_LIMIT: 1024M\n    depends_on:\n      - mysql\n\n" "$file_path"
+      break
+    else
+      insert_line=$((insert_line + 1))
+      printf '\n\n' >> "$file_path"
+    fi
+  done
+else
+  insert_line=$((volumes_line + 1))
+  while true; do
+    line_content=$(sed -n "${insert_line}p" "$file_path")
+    if [ -z "$line_content" ]; then
+      sed -i "${insert_line}i\ \ \ \ \depends_on:\n\ \ \ \ \ \ \- mysql \n" "$file_path"
+      break
+    else
+      insert_line=$((insert_line + 1))
+      printf '\n\n' >> "$file_path"
+    fi
+  done
+fi
 
   file=/opt/marzban/.env
   if grep -q "^SQLALCHEMY_DATABASE_URL" "$file"; then
@@ -267,7 +276,6 @@ EOF
     if [ $(grep "(Press CTRL+C to quit)" output.txt | wc -l) -gt 0 ]; then
       #kill -9 $(pgrep -f 'marzban.*restart')
       sleep 1
-      rm -r /root/output.txt
       break
     fi
   done
