@@ -1,7 +1,7 @@
 #!/bin/bash
 
 AUTHOR="[Mobin Alipour](https://github.com/mobinalipour)"
-VERSION="2.4.1"
+VERSION="2.4.2"
 
 # Data Created:
 #    2023-10-29
@@ -211,59 +211,69 @@ backup_old_files(){
 
 
 change_to_mysql() {
-file_path="/opt/marzban/docker-compose.yml"
+  edit_docker_yml() {  
+   file_path="/opt/marzban/docker-compose.yml"
+ 
+   services_line=$(grep -n "services:" "$file_path" | head -n 1 | cut -d: -f1)
+   volumes_line=$(grep -n "volumes:" "$file_path" | head -n 1 | cut -d: -f1)
+   depends_on_line=$(grep -n "depends_on:" "$file_path" | head -n 1 | cut -d: -f1)
+   
+   if [ -n "$depends_on_line" ]; then
+     insert_line=$((depends_on_line + 1))
+     while true; do
+       line_content=$(sed -n "${insert_line}p" "$file_path")
+       if [ -z "$line_content" ]; then
+         sed -i "${insert_line}i \ \ \ \ \ \ \- mysql \n" "$file_path"
+         insert_line=$((insert_line + 2))
+         sed -i "${insert_line}i \ \ mysql:\n    image: mysql:latest\n    restart: always\n    env_file: .env\n    network_mode: host\n    command: --bind-address=127.0.0.1 --mysqlx-bind-address=127.0.0.1 --disable-log-bin\n    environment:\n      MYSQL_DATABASE: marzban\n    volumes:\n      - \/var\/lib\/marzban\/mysql:\/var\/lib\/mysql\n\n  phpmyadmin:\n    image: phpmyadmin\/phpmyadmin:latest\n    restart: always\n    env_file: .env\n    network_mode: host\n    environment:\n      PMA_HOST: 127.0.0.1\n      APACHE_PORT: 8010\n      UPLOAD_LIMIT: 1024M\n    depends_on:\n      - mysql\n\n" "$file_path"
+         break
+       else
+         insert_line=$((insert_line + 1))
+         printf '\n\n' >> "$file_path"
+       fi
+     done
+   else
+     insert_line=$((volumes_line + 1))
+     while true; do
+       line_content=$(sed -n "${insert_line}p" "$file_path")
+       if [ -z "$line_content" ]; then
+         sed -i "${insert_line}i\ \ \ \ \depends_on:\n\ \ \ \ \ \ \- mysql \n" "$file_path"
+         insert_line=$((insert_line + 2))
+         sed -i "${insert_line}i \ \ mysql:\n    image: mysql:latest\n    restart: always\n    env_file: .env\n    network_mode: host\n    command: --bind-address=127.0.0.1 --mysqlx-bind-address=127.0.0.1 --disable-log-bin\n    environment:\n      MYSQL_DATABASE: marzban\n    volumes:\n      - \/var\/lib\/marzban\/mysql:\/var\/lib\/mysql\n\n  phpmyadmin:\n    image: phpmyadmin\/phpmyadmin:latest\n    restart: always\n    env_file: .env\n    network_mode: host\n    environment:\n      PMA_HOST: 127.0.0.1\n      APACHE_PORT: 8010\n      UPLOAD_LIMIT: 1024M\n    depends_on:\n      - mysql\n\n" "$file_path"
+         break
+       else
+         insert_line=$((insert_line + 1))
+         printf '\n\n' >> "$file_path"
+       fi
+     done
+   fi
+  }
 
-services_line=$(grep -n "services:" "$file_path" | head -n 1 | cut -d: -f1)
-volumes_line=$(grep -n "volumes:" "$file_path" | head -n 1 | cut -d: -f1)
-depends_on_line=$(grep -n "depends_on:" "$file_path" | head -n 1 | cut -d: -f1)
 
-if [ -n "$depends_on_line" ]; then
-  insert_line=$((depends_on_line + 1))
-  while true; do
-    line_content=$(sed -n "${insert_line}p" "$file_path")
-    if [ -z "$line_content" ]; then
-      sed -i "${insert_line}i \ \ \ \ \ \ \- mysql \n" "$file_path"
-      insert_line=$((insert_line + 2))
-      sed -i "${insert_line}i \ \ mysql:\n    image: mysql:latest\n    restart: always\n    env_file: .env\n    network_mode: host\n    command: --bind-address=127.0.0.1 --mysqlx-bind-address=127.0.0.1 --disable-log-bin\n    environment:\n      MYSQL_DATABASE: marzban\n    volumes:\n      - \/var\/lib\/marzban\/mysql:\/var\/lib\/mysql\n\n  phpmyadmin:\n    image: phpmyadmin\/phpmyadmin:latest\n    restart: always\n    env_file: .env\n    network_mode: host\n    environment:\n      PMA_HOST: 127.0.0.1\n      APACHE_PORT: 8010\n      UPLOAD_LIMIT: 1024M\n    depends_on:\n      - mysql\n\n" "$file_path"
-      break
+  edit_env() {
+    file=/opt/marzban/.env
+    if grep -q "^SQLALCHEMY_DATABASE_URL" "$file"; then
+      sed -i 's/^SQLALCHEMY_DATABASE_URL/#&/' "$file"
+      echo "SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:${database_password}@127.0.0.1/marzban"" >> "$file"
+      echo "MYSQL_ROOT_PASSWORD = ${database_password}" >> "$file"
     else
-      insert_line=$((insert_line + 1))
-      printf '\n\n' >> "$file_path"
+      echo "SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:${database_password}@127.0.0.1/marzban"" >> "$file"
+      echo "MYSQL_ROOT_PASSWORD = ${database_password}" >> "$file"
     fi
-  done
-else
-  insert_line=$((volumes_line + 1))
-  while true; do
-    line_content=$(sed -n "${insert_line}p" "$file_path")
-    if [ -z "$line_content" ]; then
-      sed -i "${insert_line}i\ \ \ \ \depends_on:\n\ \ \ \ \ \ \- mysql \n" "$file_path"
-      break
-    else
-      insert_line=$((insert_line + 1))
-      printf '\n\n' >> "$file_path"
-    fi
-  done
-fi
-
-  file=/opt/marzban/.env
-  if grep -q "^SQLALCHEMY_DATABASE_URL" "$file"; then
-    sed -i 's/^SQLALCHEMY_DATABASE_URL/#&/' "$file"
-    echo "SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:${database_password}@127.0.0.1/marzban"" >> "$file"
-    echo "MYSQL_ROOT_PASSWORD = ${database_password}" >> "$file"
-  else
-    echo "SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:${database_password}@127.0.0.1/marzban"" >> "$file"
-    echo "MYSQL_ROOT_PASSWORD = ${database_password}" >> "$file"
-  fi
-
-  marzban restart | tee output.txt &
-  while true; do
-    if [ $(grep "(Press CTRL+C to quit)" output.txt | wc -l) -gt 0 ]; then
-      #kill -9 $(pgrep -f 'marzban.*restart')
-      sleep 1
-      rm -r /root/output.txt
-      break
-    fi
-  done
+  
+    marzban restart | tee output.txt &
+    while true; do
+      if [ $(grep "(Press CTRL+C to quit)" output.txt | wc -l) -gt 0 ]; then
+        #kill -9 $(pgrep -f 'marzban.*restart')
+        sleep 1
+        rm -r /root/output.txt
+        break
+      fi
+    done
+  }
+  
+  edit_docker_yml
+  edit_env
 
   sqlite3 /var/lib/marzban/db.sqlite3 '.dump --data-only' | sed "s/INSERT INTO \([^ ]*\)/REPLACE INTO \`\\1\`/g" > /tmp/dump.sql
   cd /opt/marzban || exit 
