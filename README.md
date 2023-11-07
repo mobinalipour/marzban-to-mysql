@@ -1,9 +1,4 @@
 ### [توضیحات فارسی ](https://github.com/mobinalipour/marzban-to-mysql/blob/main/README-FA.md)
-# TALKA
-
-The TALKA will change your [marzban](https://github.com/Gozargah/Marzban) database(sqlite) to MySQL.
-
-Also, this script transfers data from your old database(sqlite3) to the new database(MySQL).
 
 ### version 2.5.3 changes
 - improve codes and performance
@@ -16,6 +11,12 @@ Also, this script transfers data from your old database(sqlite3) to the new data
 - detecting Merzban database mthod is changed and improved
 - Improve the backup process
 - Ubuntu 20.04 support
+- 
+# TALKA
+
+The TALKA will change your [marzban](https://github.com/Gozargah/Marzban) database(sqlite) to MySQL.
+
+Also, this script transfers data from your old database(sqlite3) to the new database(MySQL).
 
 ## features
 
