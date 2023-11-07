@@ -11,7 +11,7 @@
 - detecting Merzban database mthod is changed and improved
 - Improve the backup process
 - Ubuntu 20.04 support
-- 
+
 # TALKA
 
 The TALKA will change your [marzban](https://github.com/Gozargah/Marzban) database(sqlite) to MySQL.
