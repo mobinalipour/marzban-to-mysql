@@ -3,16 +3,16 @@
 
 The TALKA will change your [marzban](https://github.com/Gozargah/Marzban) database(sqlite) to MySQL.
 
-Also, this script transfers the users and... the old database to the new database.
+Also, this script transfers data from your old database(sqlite3) to the new database(MySQL).
 
 
 ## features
 
 - One command run
-- Great for non technical users
-- takes backup you old data
+- takes backup before any change
 - user friendly
-- transfer old data to new database
+- transfering old data to new database
+- installs phpmyadmin
 - and...
 
 
@@ -26,9 +26,10 @@ bash <(curl -s https://raw.githubusercontent.com/mobinalipour/marzban-to-mysql/m
     
 ## Notes
 
-The use of this script is completely safe because before doing anything, it takes a backup of `/opt/marzban` and `/var/marzban`paths and saves it in the `/root/marzban-old-files` and if something goes wrong you can restore your old data.
+The use of this script is safe because before any changes, it takes a backup of `/opt/marzban` and `/var/marzban`paths and saves it in the `/root/marzban-old-files` and if something goes wrong you can restore your old data.
 
-After changing the database and seeing the success message you can access the `phpmyadmin` on port `8010` 
+After changing the database and seeing the success message you can access the `phpmyadmin` on port `8010` your user will be `root` and the password is what you have entered in this script.
+
 ## Support
 
 Just give me a star :)
