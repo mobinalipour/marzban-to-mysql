@@ -5,6 +5,17 @@ The TALKA will change your [marzban](https://github.com/Gozargah/Marzban) databa
 
 Also, this script transfers data from your old database(sqlite3) to the new database(MySQL).
 
+### version 2.5.3 changes
+- improve codes and performance
+- Ask the user for the files path
+- method to editing the docker-compose file is changed and improved
+- view commands in script output
+- checks the operating system and its version
+- Ask the user to install phpmyadmin
+- detecting Marzban installation status method is changed and improved
+- detecting Merzban database mthod is changed and improved
+- Improve the backup process
+- Ubuntu 20.04 support
 
 ## features
 
